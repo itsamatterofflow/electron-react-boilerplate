@@ -1,50 +1,196 @@
-import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
-import icon from '../../assets/icon.svg';
-import './App.css';
+/* eslint-disable no-console */
+import React, { useState, useEffect } from 'react';
+import './styles/App.scss';
+import ColorScheme from './ColorScheme'; // Import the reusable ColorScheme component
+import icons from './icons'; // Import the icons object
 
-function Hello() {
+// Type definition for a color scheme
+interface Color {
+  hex: string;
+  locked: boolean;
+  unlocked?: boolean;
+}
+
+interface Scheme {
+  id: number;
+  name: string;
+  colors: Color[];
+  locked: boolean;
+}
+
+const generateRandomColorName = () => {
+  const adjectives = [
+    'Vibrant',
+    'Mystic',
+    'Fiery',
+    'Bold',
+    'Ethereal',
+    'Electric',
+    'Dusky',
+    'Radiant',
+    'Shimmering',
+    'Cosmic',
+    'Fiery',
+    'Frosty',
+    'Sunset',
+    'Twilight',
+    'Lush',
+    'Blissful',
+    'Neon',
+    'Velvety',
+    'Golden',
+    'Royal',
+    'Misty',
+    'Snowy',
+  ];
+
+  const themes = [
+    'Blues',
+    'Purples',
+    'Reds',
+    'Greens',
+    'Yellows',
+    'Pinks',
+    'Oranges',
+    'Shades',
+    'Tones',
+    'Hues',
+    'Lights',
+    'Dreams',
+    'Waves',
+    'Squad',
+    'Rush',
+  ];
+
+  const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const theme = themes[Math.floor(Math.random() * themes.length)];
+
+  return `${adjective} ${theme}`;
+};
+
+const schemeIdCounter = 0;
+
+// Helper function to generate a random color
+const getRandomColor = () =>
+  `#${Math.floor(Math.random() * 16777215)
+    .toString(16)
+    .padStart(6, '0')}`;
+
+// Helper function to create a new scheme with random colors
+const createNewScheme = (): Scheme => ({
+  id: schemeIdCounter,
+  name: generateRandomColorName(),
+  colors: new Array(4)
+    .fill(null)
+    .map(() => ({ hex: getRandomColor(), locked: false })),
+  locked: false, // Add default value for locked
+});
+
+function App() {
+  // Load color schemes from localStorage on initial load or use a default
+  const loadColorSchemesFromStorage = (): Scheme[] => {
+    const storedSchemes = localStorage.getItem('colorSchemes');
+    if (storedSchemes) {
+      const parsedSchemes = JSON.parse(storedSchemes);
+      // Check if the stored schemes are valid and an array
+      if (Array.isArray(parsedSchemes) && parsedSchemes.length > 0) {
+        console.log('Loaded color schemes from localStorage:', parsedSchemes); // Debug log
+        return parsedSchemes;
+      }
+    }
+    // If no schemes are found or if the array is empty, add a default scheme
+    const defaultScheme = createNewScheme();
+    localStorage.setItem('colorSchemes', JSON.stringify([defaultScheme])); // Save to localStorage
+    return [defaultScheme]; // Return default scheme
+  };
+
+  const [colorSchemes, setColorSchemes] = useState<Scheme[]>(
+    loadColorSchemesFromStorage,
+  );
+
+  // Save color schemes to localStorage whenever they are updated
+  const saveColorSchemesToLocalStorage = (newSchemes: Scheme[]) => {
+    localStorage.setItem('colorSchemes', JSON.stringify(newSchemes));
+  };
+
+  // On component mount, load color schemes from localStorage
+  useEffect(() => {
+    const savedSchemes = JSON.parse(
+      localStorage.getItem('colorSchemes') || '[]',
+    );
+    if (savedSchemes.length > 0) {
+      setColorSchemes(savedSchemes); // Set the color schemes if they exist in localStorage
+    }
+  }, []);
+
+  const addNewScheme = () => {
+    const newScheme = createNewScheme(); // Generate a new scheme
+    const updatedSchemes = [...colorSchemes, newScheme];
+    setColorSchemes(updatedSchemes); // Update state with the new scheme
+    saveColorSchemesToLocalStorage(updatedSchemes); // Save to localStorage
+  };
+
+  const refreshSchemes = (schemeIndex: number) => {
+    const updatedSchemes = colorSchemes.map((s, index) => {
+      if (index === schemeIndex) {
+        // Update the scheme's colors only if the scheme is unlocked
+        const updatedColors = s.colors.map((color) => {
+          if (!color.locked) {
+            return { ...color, hex: getRandomColor() }; // Generate new color if it's unlocked
+          }
+          return color; // Keep locked colors as they are
+        });
+
+        return { ...s, colors: updatedColors };
+      }
+      return s;
+    });
+
+    setColorSchemes(updatedSchemes);
+    saveColorSchemesToLocalStorage(updatedSchemes); // Save updated color schemes with new colors
+  };
+
+  const deleteScheme = (id: number) => {
+    const updatedSchemes = colorSchemes.filter((scheme) => scheme.id !== id);
+    setColorSchemes(updatedSchemes);
+    saveColorSchemesToLocalStorage(updatedSchemes);
+  };
+
   return (
-    <div>
-      <div className="Hello">
-        <img width="200" alt="icon" src={icon} />
-      </div>
-      <h1>electron-react-boilerplate</h1>
-      <div className="Hello">
-        <a
-          href="https://electron-react-boilerplate.js.org/"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <button type="button">
-            <span role="img" aria-label="books">
-              📚
-            </span>
-            Read our docs
+    <div className="page-wrap">
+      <header>
+        <h2>Color Picker</h2>
+
+        <div className="button-group">
+          <button type="button" onClick={addNewScheme}>
+            <img src={icons.add} alt="Add scheme" />
           </button>
-        </a>
-        <a
-          href="https://github.com/sponsors/electron-react-boilerplate"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <button type="button">
-            <span role="img" aria-label="folded hands">
-              🙏
-            </span>
-            Donate
+
+          <button type="button" onClick={() => refreshSchemes(0)}>
+            <img src={icons.refresh} alt="Refresh schemes" />
           </button>
-        </a>
+        </div>
+      </header>
+
+      <div className="color-schemes-container">
+        {colorSchemes.length > 0 ? (
+          colorSchemes.map((scheme, index) => (
+            <div key={scheme.id}>
+              <ColorScheme
+                scheme={scheme}
+                deleteScheme={deleteScheme}
+                schemeIndex={index} // Pass the index here
+                setColorSchemes={setColorSchemes}
+                colorSchemes={colorSchemes}
+              />
+            </div>
+          ))
+        ) : (
+          <p>No color schemes available</p>
+        )}
       </div>
     </div>
   );
 }
 
-export default function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Hello />} />
-      </Routes>
-    </Router>
-  );
-}
+export default App;
