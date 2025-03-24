@@ -195,9 +195,6 @@ function ColorScheme({
 
     setColorSchemes(updatedSchemes);
     saveColorSchemesToLocalStorage(updatedSchemes);
-
-    setToastMessage('Schemes refreshed!');
-    setTimeout(() => setToastMessage(''), 3000);
   };
 
   return (

@@ -130,26 +130,6 @@ function App() {
     saveColorSchemesToLocalStorage(updatedSchemes); // Save to localStorage
   };
 
-  const refreshSchemes = (schemeIndex: number) => {
-    const updatedSchemes = colorSchemes.map((s, index) => {
-      if (index === schemeIndex) {
-        // Update the scheme's colors only if the scheme is unlocked
-        const updatedColors = s.colors.map((color) => {
-          if (!color.locked) {
-            return { ...color, hex: getRandomColor() }; // Generate new color if it's unlocked
-          }
-          return color; // Keep locked colors as they are
-        });
-
-        return { ...s, colors: updatedColors };
-      }
-      return s;
-    });
-
-    setColorSchemes(updatedSchemes);
-    saveColorSchemesToLocalStorage(updatedSchemes); // Save updated color schemes with new colors
-  };
-
   const deleteScheme = (id: number) => {
     const updatedSchemes = colorSchemes.filter((scheme) => scheme.id !== id);
     setColorSchemes(updatedSchemes);
@@ -158,16 +138,12 @@ function App() {
 
   return (
     <div className="page-wrap">
-      <header>
+      <header className="page-header">
         <h2>Color Picker</h2>
 
         <div className="button-group">
           <button type="button" onClick={addNewScheme}>
             <img src={icons.add} alt="Add scheme" />
-          </button>
-
-          <button type="button" onClick={() => refreshSchemes(0)}>
-            <img src={icons.refresh} alt="Refresh schemes" />
           </button>
         </div>
       </header>
