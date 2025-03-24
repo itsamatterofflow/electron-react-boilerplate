@@ -4,6 +4,7 @@ import './styles/App.scss';
 import ColorScheme from './ColorScheme'; // Import the reusable ColorScheme component
 import icons from './icons'; // Import the icons object
 import { v4 as uuidv4 } from 'uuid'; // Import uuid
+import LoadingScreen from './loadingscreen'; // Import the LoadingScreen component
 
 // Type definition for a color scheme
 interface Color {
@@ -93,6 +94,9 @@ const createNewScheme = (): Scheme => ({
 });
 
 function App() {
+  const [loading, setLoading] = useState(true); // Add loading state
+  const [colorSchemes, setColorSchemes] = useState<Scheme[]>([]);
+
   // Load color schemes from localStorage on initial load or use a default
   const loadColorSchemesFromStorage = (): Scheme[] => {
     const storedSchemes = localStorage.getItem('colorSchemes');
@@ -111,24 +115,18 @@ function App() {
     return [defaultScheme]; // Return default scheme
   };
 
-  const [colorSchemes, setColorSchemes] = useState<Scheme[]>(
-    loadColorSchemesFromStorage,
-  );
-
+  // On component mount, load color schemes from localStorage
+  useEffect(() => {
+    const schemes = loadColorSchemesFromStorage();
+    setTimeout(() => {
+      setColorSchemes(schemes);
+      setLoading(false); // Set loading to false after loading schemes
+    }, 2000); // Simulate a 2-second delay
+  }, []);
   // Save color schemes to localStorage whenever they are updated
   const saveColorSchemesToLocalStorage = (newSchemes: Scheme[]) => {
     localStorage.setItem('colorSchemes', JSON.stringify(newSchemes));
   };
-
-  // On component mount, load color schemes from localStorage
-  useEffect(() => {
-    const savedSchemes = JSON.parse(
-      localStorage.getItem('colorSchemes') || '[]',
-    );
-    if (savedSchemes.length > 0) {
-      setColorSchemes(savedSchemes); // Set the color schemes if they exist in localStorage
-    }
-  }, []);
 
   const addNewScheme = () => {
     const newScheme = createNewScheme(); // Generate a new scheme
@@ -142,6 +140,10 @@ function App() {
     setColorSchemes(updatedSchemes);
     saveColorSchemesToLocalStorage(updatedSchemes);
   };
+
+  if (loading) {
+    return <LoadingScreen />; // Render the loading screen while loading
+  }
 
   return (
     <div className="page-wrap">

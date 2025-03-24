@@ -9,7 +9,7 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, Tray, Menu } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
@@ -24,6 +24,7 @@ class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
+let tray: Tray | null = null;
 
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
@@ -56,6 +57,40 @@ const installExtensions = async () => {
     .catch(console.log);
 };
 
+const createTray = () => {
+  const iconPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'assets', 'flower.png') // Use the correct path to your tray icon
+    : path.join(__dirname, '../../assets/flower.png'); // Use the correct path to your tray icon
+
+  tray = new Tray(iconPath);
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Show App',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+        }
+      },
+    },
+    {
+      label: 'Quit',
+      click: () => {
+        app.quit();
+      },
+    },
+  ]);
+
+  tray.setToolTip('pick me');
+  tray.setContextMenu(contextMenu);
+
+  tray.on('click', () => {
+    if (mainWindow) {
+      mainWindow.isVisible() ? mainWindow.hide() : mainWindow.show();
+    }
+  });
+};
+
 const createWindow = async () => {
   if (isDebug) {
     await installExtensions();
@@ -75,9 +110,9 @@ const createWindow = async () => {
     height: 500,
     icon: getAssetPath('icon.png'),
     webPreferences: {
-      preload: app.isPackaged
-        ? path.join(__dirname, 'preload.js')
-        : path.join(__dirname, '../../.erb/dll/preload.js'),
+      preload: path.join(__dirname, 'preload.js'), // Ensure the correct path to preload.js
+      contextIsolation: true, // This is important for security
+      nodeIntegration: false,  // This should be false for security
     },
   });
 
@@ -128,6 +163,7 @@ app
   .whenReady()
   .then(() => {
     createWindow();
+    createTray(); // Create the tray icon and context menu
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
       // dock icon is clicked and there are no other windows open.
