@@ -34,7 +34,7 @@ interface Color {
 }
 
 interface Scheme {
-  id: number;
+  id: string;
   name: string;
   colors: Color[];
   locked: boolean;
@@ -45,9 +45,8 @@ interface ColorSchemeProps {
   scheme: Scheme;
   setColorSchemes: React.Dispatch<React.SetStateAction<Scheme[]>>;
   colorSchemes: Scheme[];
-  deleteScheme: (id: number) => void;
+  deleteScheme: (id: string) => void;
 }
-
 function ColorScheme({
   schemeIndex,
   scheme,

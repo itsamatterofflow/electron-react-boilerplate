@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import './styles/App.scss';
 import ColorScheme from './ColorScheme'; // Import the reusable ColorScheme component
 import icons from './icons'; // Import the icons object
+import { v4 as uuidv4 } from 'uuid'; // Import uuid
 
 // Type definition for a color scheme
 interface Color {
@@ -12,10 +13,17 @@ interface Color {
 }
 
 interface Scheme {
-  id: number;
+  id: string; // Change id type to string
   name: string;
   colors: Color[];
   locked: boolean;
+}
+interface ColorSchemeProps {
+  schemeIndex: number;
+  scheme: Scheme;
+  setColorSchemes: React.Dispatch<React.SetStateAction<Scheme[]>>;
+  colorSchemes: Scheme[];
+  deleteScheme: (id: string) => void;
 }
 
 const generateRandomColorName = () => {
@@ -68,8 +76,6 @@ const generateRandomColorName = () => {
   return `${adjective} ${theme}`;
 };
 
-const schemeIdCounter = 0;
-
 // Helper function to generate a random color
 const getRandomColor = () =>
   `#${Math.floor(Math.random() * 16777215)
@@ -78,7 +84,7 @@ const getRandomColor = () =>
 
 // Helper function to create a new scheme with random colors
 const createNewScheme = (): Scheme => ({
-  id: schemeIdCounter,
+  id: uuidv4(), // Use uuid to generate a unique id
   name: generateRandomColorName(),
   colors: new Array(4)
     .fill(null)
@@ -95,6 +101,7 @@ function App() {
       // Check if the stored schemes are valid and an array
       if (Array.isArray(parsedSchemes) && parsedSchemes.length > 0) {
         console.log('Loaded color schemes from localStorage:', parsedSchemes); // Debug log
+        // Return the stored schemes as they are without modifying their IDs
         return parsedSchemes;
       }
     }
@@ -130,7 +137,7 @@ function App() {
     saveColorSchemesToLocalStorage(updatedSchemes); // Save to localStorage
   };
 
-  const deleteScheme = (id: number) => {
+  const deleteScheme = (id: string) => {
     const updatedSchemes = colorSchemes.filter((scheme) => scheme.id !== id);
     setColorSchemes(updatedSchemes);
     saveColorSchemesToLocalStorage(updatedSchemes);
